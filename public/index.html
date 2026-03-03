@@ -2,61 +2,193 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Live Leaderboard</title>
+<title>AWS Cloud Club Leaderboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
+
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #111;
-  color: #fff;
-  text-align: center;
+    margin: 0;
+    font-family: 'Orbitron', sans-serif;
+    background: radial-gradient(circle at top, #1a0033 0%, #0a0014 40%, #000000 100%);
+    color: white;
+    overflow-x: hidden;
 }
-h1 { margin-top: 20px; }
-ul { list-style: none; padding: 0; }
-li {
-  background: rgba(255,255,255,0.1);
-  border-radius: 8px;
-  margin: 10px;
-  padding: 12px;
-  font-size: 18px;
-  display: flex;
-  justify-content: space-between;
+
+/* Animated background glow */
+body::before {
+    content: "";
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(155,0,255,0.4), transparent 70%);
+    top: -200px;
+    left: -200px;
+    animation: glowMove 10s infinite alternate ease-in-out;
+    z-index: -1;
 }
-.gold { background: #ffd700; color: #000; }
-.silver { background: #c0c0c0; color: #000; }
-.bronze { background: #cd7f32; color: #000; }
+
+@keyframes glowMove {
+    from { transform: translate(0,0); }
+    to { transform: translate(200px,200px); }
+}
+
+.container {
+    max-width: 1000px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 48px;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #a855f7, #d946ef);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 50px;
+}
+
+/* Podium Top 3 */
+.podium {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 30px;
+    margin-bottom: 60px;
+}
+
+.podium-card {
+    width: 220px;
+    text-align: center;
+    border-radius: 15px;
+    padding: 20px;
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 0 20px rgba(168,85,247,0.5);
+    transition: transform 0.3s ease;
+}
+
+.podium-card:hover {
+    transform: translateY(-10px);
+}
+
+.rank-number {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: #d946ef;
+}
+
+.player-name {
+    font-size: 20px;
+}
+
+.player-score {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #a855f7;
+}
+
+/* Top 10 List */
+.leaderboard {
+    list-style: none;
+    padding: 0;
+}
+
+.leaderboard li {
+    display: flex;
+    justify-content: space-between;
+    padding: 18px 25px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(168,85,247,0.3);
+    transition: 0.3s ease;
+}
+
+.leaderboard li:hover {
+    background: rgba(168,85,247,0.15);
+    box-shadow: 0 0 15px rgba(168,85,247,0.6);
+    transform: scale(1.02);
+}
+
+.rank {
+    width: 50px;
+    font-weight: bold;
+    color: #d946ef;
+}
+
+.name {
+    flex: 1;
+}
+
+.score {
+    font-weight: bold;
+    color: #a855f7;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 40px;
+    opacity: 0.6;
+    font-size: 14px;
+}
+
 </style>
 </head>
 <body>
 
-<h1>🏆 AWS Cloud Quiz – Top 10</h1>
-<ul id="leaderboard"></ul>
+<div class="container">
+    <h1>🚀 AWS CLOUD CLUB LEADERBOARD</h1>
+
+    <div class="podium" id="podium"></div>
+
+    <ul id="leaderboard" class="leaderboard"></ul>
+
+    <div class="footer">Live Updates Every 10 Seconds</div>
+</div>
 
 <script>
+
 async function updateLeaderboard() {
-  try {
     const res = await fetch("/api/leaderboard");
     const data = await res.json();
 
+    const podium = document.getElementById("podium");
     const list = document.getElementById("leaderboard");
+
+    podium.innerHTML = "";
     list.innerHTML = "";
 
-    data.forEach((p, i) => {
-      const li = document.createElement("li");
-      if (i === 0) li.classList.add("gold");
-      if (i === 1) li.classList.add("silver");
-      if (i === 2) li.classList.add("bronze");
-
-      li.innerHTML = `<span>${i+1}. ${p.name}</span><span>${p.score}</span>`;
-      list.appendChild(li);
+    // Top 3 podium
+    data.slice(0,3).forEach((player, i) => {
+        const card = document.createElement("div");
+        card.className = "podium-card";
+        card.innerHTML = `
+            <div class="rank-number">#${i+1}</div>
+            <div class="player-name">${player.name}</div>
+            <div class="player-score">${player.score} pts</div>
+        `;
+        podium.appendChild(card);
     });
-  } catch (err) {
-    console.error("Leaderboard update failed:", err);
-  }
+
+    // Remaining 4–10
+    data.slice(3,10).forEach((player, i) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <span class="rank">#${i+4}</span>
+            <span class="name">${player.name}</span>
+            <span class="score">${player.score}</span>
+        `;
+        list.appendChild(li);
+    });
 }
 
 updateLeaderboard();
 setInterval(updateLeaderboard, 10000);
+
 </script>
 
 </body>
