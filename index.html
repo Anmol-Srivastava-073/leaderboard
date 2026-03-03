@@ -16,7 +16,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Animated background glow */
+/* Animated glow */
 body::before {
     content: "";
     position: fixed;
@@ -35,39 +35,37 @@ body::before {
 }
 
 .container {
-    max-width: 1000px;
-    margin: 50px auto;
+    max-width: 1100px;
+    margin: 60px auto;
     padding: 20px;
 }
 
 h1 {
     text-align: center;
-    font-size: 48px;
-    letter-spacing: 2px;
+    font-size: 52px;
     background: linear-gradient(90deg, #a855f7, #d946ef);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 50px;
-}
-
-/* Podium Top 3 */
-.podium {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    gap: 30px;
     margin-bottom: 60px;
 }
 
+/* PODIUM */
+.podium {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 70px;
+}
+
 .podium-card {
-    width: 220px;
-    text-align: center;
-    border-radius: 15px;
-    padding: 20px;
+    width: 240px;
+    padding: 25px;
+    border-radius: 18px;
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(15px);
-    box-shadow: 0 0 20px rgba(168,85,247,0.5);
-    transition: transform 0.3s ease;
+    box-shadow: 0 0 30px rgba(168,85,247,0.6);
+    text-align: center;
+    transition: 0.3s;
 }
 
 .podium-card:hover {
@@ -75,13 +73,13 @@ h1 {
 }
 
 .rank-number {
-    font-size: 24px;
-    margin-bottom: 10px;
+    font-size: 28px;
     color: #d946ef;
 }
 
 .player-name {
-    font-size: 20px;
+    font-size: 22px;
+    margin-top: 12px;
 }
 
 .player-score {
@@ -90,7 +88,12 @@ h1 {
     color: #a855f7;
 }
 
-/* Top 10 List */
+.player-time {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* TOP LIST */
 .leaderboard {
     list-style: none;
     padding: 0;
@@ -99,39 +102,27 @@ h1 {
 .leaderboard li {
     display: flex;
     justify-content: space-between;
-    padding: 18px 25px;
-    margin-bottom: 15px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.04);
-    backdrop-filter: blur(10px);
+    padding: 20px 30px;
+    margin-bottom: 18px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.05);
     border: 1px solid rgba(168,85,247,0.3);
-    transition: 0.3s ease;
+    transition: 0.3s;
 }
 
 .leaderboard li:hover {
-    background: rgba(168,85,247,0.15);
-    box-shadow: 0 0 15px rgba(168,85,247,0.6);
+    background: rgba(168,85,247,0.2);
     transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(168,85,247,0.7);
 }
 
-.rank {
-    width: 50px;
-    font-weight: bold;
-    color: #d946ef;
-}
-
-.name {
-    flex: 1;
-}
-
-.score {
-    font-weight: bold;
-    color: #a855f7;
-}
+.rank { width: 60px; color: #d946ef; font-weight: bold; }
+.name { flex: 1; }
+.score { color: #a855f7; font-weight: bold; }
 
 .footer {
     text-align: center;
-    margin-top: 40px;
+    margin-top: 60px;
     opacity: 0.6;
     font-size: 14px;
 }
@@ -144,15 +135,27 @@ h1 {
     <h1>🚀 AWS CLOUD CLUB LEADERBOARD</h1>
 
     <div class="podium" id="podium"></div>
-
     <ul id="leaderboard" class="leaderboard"></ul>
 
-    <div class="footer">Live Updates Every 10 Seconds</div>
+    <div class="footer">Ranking by Points ↓ then Time ↑</div>
 </div>
 
 <script>
 
-const csvURL = "https://raw.githubusercontent.com/Anmol-Srivastava-073/leaderboard/edit/main/public/data.csv";
+// ✅ IMPORTANT: Use RAW GitHub link (no /edit/)
+const csvURL = "https://raw.githubusercontent.com/Anmol-Srivastava-073/leaderboard/main/public/data.csv";
+
+function calculateSeconds(start, end) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    return Math.floor((endDate - startDate) / 1000);
+}
+
+function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
+}
 
 async function updateLeaderboard() {
     try {
@@ -163,14 +166,17 @@ async function updateLeaderboard() {
 
         let players = rows.map(row => {
             const cols = row.split(",");
+
+            const timeTaken = calculateSeconds(cols[2], cols[3]);
+
             return {
                 name: cols[0],
                 score: parseInt(cols[1]),
-                time: parseInt(cols[2]) // in seconds
+                time: timeTaken
             };
         });
 
-        // 🏆 Sort by Score DESC, Time ASC
+        // Sort by Score DESC, Time ASC
         players.sort((a, b) => {
             if (b.score !== a.score) {
                 return b.score - a.score;
@@ -184,6 +190,7 @@ async function updateLeaderboard() {
         podium.innerHTML = "";
         list.innerHTML = "";
 
+        // Top 3
         players.slice(0,3).forEach((player, i) => {
             const card = document.createElement("div");
             card.className = "podium-card";
@@ -191,17 +198,20 @@ async function updateLeaderboard() {
                 <div class="rank-number">#${i+1}</div>
                 <div class="player-name">${player.name}</div>
                 <div class="player-score">${player.score} pts</div>
-                <div style="font-size:14px; opacity:0.7;">${player.time}s</div>
+                <div class="player-time">${formatTime(player.time)}</div>
             `;
             podium.appendChild(card);
         });
 
+        // 4–10
         players.slice(3,10).forEach((player, i) => {
             const li = document.createElement("li");
             li.innerHTML = `
                 <span class="rank">#${i+4}</span>
                 <span class="name">${player.name}</span>
-                <span class="score">${player.score} pts (${player.time}s)</span>
+                <span class="score">
+                    ${player.score} pts • ${formatTime(player.time)}
+                </span>
             `;
             list.appendChild(li);
         });
