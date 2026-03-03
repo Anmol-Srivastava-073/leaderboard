@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <title>AWS Cloud Quiz Leaderboard</title>
+
 <style>
 body {
     margin: 0;
@@ -11,16 +13,17 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
 }
 
 .container {
-    width: 700px;
+    width: 800px;
 }
 
 h1 {
     text-align: center;
     margin-bottom: 30px;
+    font-size: 40px;
 }
 
 .leaderboard {
@@ -31,30 +34,22 @@ h1 {
 .leaderboard li {
     display: flex;
     justify-content: space-between;
-    padding: 15px 20px;
-    margin-bottom: 10px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.1);
+    padding: 18px 25px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
     backdrop-filter: blur(10px);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .leaderboard li:hover {
-    transform: scale(1.03);
+    transform: scale(1.02);
+    background: rgba(255,255,255,0.15);
 }
 
-.rank {
-    font-weight: bold;
-    width: 50px;
-}
-
-.name {
-    flex: 1;
-}
-
-.score {
-    font-weight: bold;
-}
+.rank { width: 50px; font-weight: bold; }
+.name { flex: 1; }
+.score { font-weight: bold; }
 
 .gold { background: linear-gradient(90deg, #FFD700, #FFB300); color: black; }
 .silver { background: linear-gradient(90deg, #C0C0C0, #A9A9A9); color: black; }
@@ -66,19 +61,37 @@ h1 {
 
 <div class="container">
     <h1>🏆 AWS Cloud Quiz – Top 10</h1>
-    <ul class="leaderboard">
-        <li class="gold"><span class="rank">1</span><span class="name">Anmol</span><span class="score">95</span></li>
-        <li class="silver"><span class="rank">2</span><span class="name">Riya</span><span class="score">92</span></li>
-        <li class="bronze"><span class="rank">3</span><span class="name">Arjun</span><span class="score">90</span></li>
-        <li><span class="rank">4</span><span class="name">Priya</span><span class="score">88</span></li>
-        <li><span class="rank">5</span><span class="name">Kunal</span><span class="score">85</span></li>
-        <li><span class="rank">6</span><span class="name">Meera</span><span class="score">82</span></li>
-        <li><span class="rank">7</span><span class="name">Rahul</span><span class="score">80</span></li>
-        <li><span class="rank">8</span><span class="name">Sneha</span><span class="score">78</span></li>
-        <li><span class="rank">9</span><span class="name">Vikram</span><span class="score">75</span></li>
-        <li><span class="rank">10</span><span class="name">Ishita</span><span class="score">72</span></li>
-    </ul>
+    <ul id="leaderboard" class="leaderboard"></ul>
 </div>
+
+<script>
+async function fetchLeaderboard() {
+    const response = await fetch("/api/leaderboard");
+    const data = await response.json();
+
+    const list = document.getElementById("leaderboard");
+    list.innerHTML = "";
+
+    data.forEach((player, index) => {
+        const li = document.createElement("li");
+
+        if(index === 0) li.classList.add("gold");
+        if(index === 1) li.classList.add("silver");
+        if(index === 2) li.classList.add("bronze");
+
+        li.innerHTML = `
+            <span class="rank">${index + 1}</span>
+            <span class="name">${player.name}</span>
+            <span class="score">${player.score}</span>
+        `;
+
+        list.appendChild(li);
+    });
+}
+
+fetchLeaderboard();
+setInterval(fetchLeaderboard, 10000); // auto refresh
+</script>
 
 </body>
 </html>
