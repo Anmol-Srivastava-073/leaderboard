@@ -152,38 +152,63 @@ h1 {
 
 <script>
 
+const csvURL = "https://raw.githubusercontent.com/Anmol-Srivastava-073/leaderboard/edit/main/public/data.csv";
+
 async function updateLeaderboard() {
-    const res = await fetch("/api/leaderboard");
-    const data = await res.json();
+    try {
+        const response = await fetch(csvURL + "?t=" + new Date().getTime());
+        const text = await response.text();
 
-    const podium = document.getElementById("podium");
-    const list = document.getElementById("leaderboard");
+        const rows = text.trim().split("\n").slice(1);
 
-    podium.innerHTML = "";
-    list.innerHTML = "";
+        let players = rows.map(row => {
+            const cols = row.split(",");
+            return {
+                name: cols[0],
+                score: parseInt(cols[1]),
+                time: parseInt(cols[2]) // in seconds
+            };
+        });
 
-    // Top 3 podium
-    data.slice(0,3).forEach((player, i) => {
-        const card = document.createElement("div");
-        card.className = "podium-card";
-        card.innerHTML = `
-            <div class="rank-number">#${i+1}</div>
-            <div class="player-name">${player.name}</div>
-            <div class="player-score">${player.score} pts</div>
-        `;
-        podium.appendChild(card);
-    });
+        // 🏆 Sort by Score DESC, Time ASC
+        players.sort((a, b) => {
+            if (b.score !== a.score) {
+                return b.score - a.score;
+            }
+            return a.time - b.time;
+        });
 
-    // Remaining 4–10
-    data.slice(3,10).forEach((player, i) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-            <span class="rank">#${i+4}</span>
-            <span class="name">${player.name}</span>
-            <span class="score">${player.score}</span>
-        `;
-        list.appendChild(li);
-    });
+        const podium = document.getElementById("podium");
+        const list = document.getElementById("leaderboard");
+
+        podium.innerHTML = "";
+        list.innerHTML = "";
+
+        players.slice(0,3).forEach((player, i) => {
+            const card = document.createElement("div");
+            card.className = "podium-card";
+            card.innerHTML = `
+                <div class="rank-number">#${i+1}</div>
+                <div class="player-name">${player.name}</div>
+                <div class="player-score">${player.score} pts</div>
+                <div style="font-size:14px; opacity:0.7;">${player.time}s</div>
+            `;
+            podium.appendChild(card);
+        });
+
+        players.slice(3,10).forEach((player, i) => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <span class="rank">#${i+4}</span>
+                <span class="name">${player.name}</span>
+                <span class="score">${player.score} pts (${player.time}s)</span>
+            `;
+            list.appendChild(li);
+        });
+
+    } catch (err) {
+        console.error("Error loading leaderboard:", err);
+    }
 }
 
 updateLeaderboard();
