@@ -1,4 +1,6 @@
+require("dotenv").config();
 const express = require("express");
+const axios = require("axios");
 const XLSX = require("xlsx");
 const cors = require("cors");
 const path = require("path");
@@ -8,31 +10,42 @@ app.use(cors());
 app.use(express.static("public"));
 
 const PORT = process.env.PORT || 3000;
+const EXCEL_URL = process.env.EXCEL_URL;
 
-// API Endpoint
-app.get("/api/leaderboard", (req, res) => {
-    try {
-        const workbook = XLSX.readFile("data.xlsx");
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
+// API endpoint
+app.get("/api/leaderboard", async (req, res) => {
+  try {
+    // Fetch Excel file from SharePoint
+    const response = await axios.get(EXCEL_URL, {
+      responseType: "arraybuffer"
+    });
 
-        const data = XLSX.utils.sheet_to_json(sheet);
+    // Parse Excel
+    const workbook = XLSX.read(response.data, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
 
-        // Expecting columns: Name, Total Points
-        const formatted = data.map(row => ({
-            name: row["Who're You?"],
-            score: Number(row["Total Points"])
-        }));
+    // Convert to JSON
+    const rows = XLSX.utils.sheet_to_json(sheet);
 
-        // Sort descending
-        formatted.sort((a, b) => b.score - a.score);
+    // Ensure columns:
+    //   Name  | Total Points
+    const players = rows.map(row => ({
+      name: row["Name"] || "",
+      score: Number(row["Total Points"]) || 0
+    }));
 
-        res.json(formatted.slice(0, 10)); // Top 10
-    } catch (error) {
-        res.status(500).json({ error: "Error reading Excel file" });
-    }
+    // Sort descending
+    players.sort((a, b) => b.score - a.score);
+
+    // Send top 10
+    res.json(players.slice(0, 10));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch Excel data" });
+  }
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server listening on http://localhost:${PORT}`);
 });
